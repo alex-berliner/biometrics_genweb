@@ -1,6 +1,6 @@
+import os
 import plotly.graph_objs as go
 from plotly.offline import plot
-
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -15,15 +15,15 @@ class HeadacheHtmlBuilder():
 
     def gen_page(self):
         # TODO: use real HTML generator
-        wfile = open("../web_biometrics/index.html", "w")
+        wfile = open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "w")
         for graph in reversed(self.graphs):
             graph_name, graph_dict = graph.gen_graph()
 
             head_pct = sum(graph.graph_percents)/len(graph.graph_percents)
 
-            filename = "../web_biometrics/files/%s.html"%(graph_name.replace(" ", ""))
+            filename = "files/%s.html"%(graph_name.replace(" ", ""))
             # include_plotlyjs=True not useful, js always needed inside html file
-            plot(graph_dict, filename=filename, auto_open=False)
+            plot(graph_dict, filename=os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/" + filename, auto_open=False)
             wfile.write("<a href=\"%s\">%s</a><br/>"%(filename,graph_name.split("/")[-1]))
             head_pct_str = "%2.2f" % (100.0*head_pct)
             pct_str  = ""
@@ -52,14 +52,14 @@ class GraphData():
     def gen_graph(self):
         traces = []
         # main graph
-        traces += [go.Scatter(
+        traces += [go.Line(
             name = self.name,
             x=self.graph_dates,
-            y=self.graph_percents,
+            y=[round(x, 2) for x in self.graph_percents],
             text=[str(dates) for dates in self.graph_dates],
             mode='lines+markers',
             hoverinfo='y+x',
-            line=dict(shape='hv', width=10)
+            # line=dict(shape='hv', width=10)
         )]
         for i in range(len(self.annotation_dates)):
             date = self.annotation_dates[i]

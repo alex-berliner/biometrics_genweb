@@ -1,21 +1,16 @@
-from collections import OrderedDict
-import plotly.graph_objs as go
-from plotly.offline import plot
-import pytz
+import csv
+import os
 import pandas as pd
+import plotly.graph_objs as go
+import pytz
+from collections import OrderedDict
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import csv
 from grapher import *
+from plotly.offline import plot
 
-
-"""
-time,rating
-1532451612,20.0
-1532466747,0.0
-1532468258,0.0
-1532470355,0.0
-"""
+headache_filename  = os.environ["BIOMETRICS_ROOT"] + "/biometrics/data/headache.csv"
+med_event_filename = os.environ["BIOMETRICS_ROOT"] + "/biometrics/data/med_events.csv"
 
 class HeadacheDay():
     def __init__(self, date, rate):
@@ -24,12 +19,38 @@ class HeadacheDay():
     def __str__(self):
         return "%s %s" % (str(self.date), (self.rate))
 
-def consolidate_events(events):
-    if not any(events):
+def gen_graph(graphs, start, delta, days):
+    # create GraphData's out of |days|
+    runner = start
+    while runner < datetime.now().date():
+        keys = sorted([x for x in days if x >= runner and x < (runner + delta)])
+        if len(keys) < 1:
+            runner += delta
+            continue
+        graphs += [GraphData("Headache Intensity")]
+        for date in keys:
+            day = days[date]
+            annotations = []
+            for event in day:
+                if isinstance(event, HeadacheDay):
+                    graphs[-1].graph_dates    += [event.date]
+                    graphs[-1].graph_percents += [event.rate]
+            for event in day:
+                if isinstance(event, str):
+                    annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br>==="]
+            if any(annotations):
+                graphs[-1].annotation_dates += [date]
+                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("===")]
+
+        runner += delta
+
+def consolidate_events(day_accu):
+    if len(day_accu) < 1:
         return
 
-    maxnight = datetime.combine(events[0].date, datetime.max.time())
-    events += [HeadacheDay(maxnight, -1)]
+    maxnight = datetime.combine(day_accu[0].date, datetime.max.time())
+    # maxnight = pytz.timezone("US/Pacific").localize(maxnight)
+    day_accu += [HeadacheDay(maxnight, -1)]
     conditions = []
     for i in range(len(day_accu)-1):
         day = day_accu[i]
@@ -42,14 +63,10 @@ def consolidate_events(events):
     for condition in conditions:
         final_rate += condition[0]/total_time * condition[1]
 
-    midnight = datetime.combine(events[0].date, datetime.min.time())
+    midnight = datetime.combine(day_accu[0].date, datetime.min.time())
     return HeadacheDay(midnight, final_rate)
 
-headache_filename = "../biometrics/data/headache.csv"
-med_event_filename = "../biometrics/data/med_events.csv"
 def get_headache_days():
-    global day_accu
-
     rows = []
     with open(headache_filename, 'r') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -62,19 +79,21 @@ def get_headache_days():
         rate = float(row[1])/100
         day = HeadacheDay(date, rate)
         headache_events += [day]
-
     headache_days = []
     current_day = -1
     day_accu = []
-    for event in headache_events:
-        # flush day_accu, consolidate into single day
-        if current_day != event.date.day:
-            ret = consolidate_events(day_accu)
-            if ret is not None:
-                headache_days += [ret]
-            day_accu = []
-            current_day = event.date.day
-        day_accu += [event]
+
+    runner = datetime(2017, 1, 1)
+    d = relativedelta(days=1)
+    while runner < datetime.now():
+        t1 = runner
+        t2 = runner + d
+        selection = [x for x in headache_events if t1 <= x.date and x.date < t2]
+        runner += d
+        if len(selection) > 0:
+            ret = consolidate_events(selection)
+            headache_days += [ret]
+
     return headache_days
 
 def get_med_events():
@@ -93,73 +112,35 @@ def get_med_events():
 
     return df
 
-headache_days = get_headache_days()
-med_events = get_med_events()
+def main():
+    headache_days = get_headache_days()
+    med_events = get_med_events()
 
-days = OrderedDict()
+    days = OrderedDict()
+    for day_iter in headache_days:
+        days[day_iter.date.date()] = [day_iter]
 
-for day_iter in headache_days:
-    days[day_iter.date.date()] = [day_iter]
+    # combine headache and med events into |days|
+    for i in range(len(med_events)):
+        date = datetime.fromtimestamp(int(med_events["date"][i].timestamp())).date()
+        if date in days:
+            days[date] += [med_events["med_events"][i]]
+        else:
+            days[date] = [med_events["med_events"][i]]
 
-# combine headache and med events into |days|
-for i in range(len(med_events)):
-    date = datetime.fromtimestamp(int(med_events["date"][i].timestamp())).date()
-    if date in days:
-      days[date] += [med_events["med_events"][i]]
-    else:
-      days[date] = [med_events["med_events"][i]]
+    graphs2 = []
 
-# create GraphData's out of |days|
-runner = datetime(2017, 11, 1).date()
-delta  = relativedelta(months=1)
-graphs2 = []
-while runner < datetime.now().date():
-    keys = sorted([x for x in days if x >= runner and x < (runner + delta)])
-    if len(keys) < 1:
-        runner += delta
-        continue
-    graphs2 += [GraphData("Headache Intensity")]
-    for date in keys:
-        day = days[date]
-        annotations = []
-        for event in day:
-            if isinstance(event, HeadacheDay):
-                graphs2[-1].graph_dates    += [event.date]
-                graphs2[-1].graph_percents += [event.rate]
-        for event in day:
-            if isinstance(event, str):
-                annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br>==="]
-        if any(annotations):
-            graphs2[-1].annotation_dates += [date]
-            graphs2[-1].annotation_text  += ["<br>".join(annotations).rstrip("===")]
-        # print("\n".join(annotations).strip())
-        # print(annotations)
+    d = relativedelta(months=1)
+    gen_graph(graphs2, datetime(2017, 11, 1).date(), d, days)
 
-    runner += delta
+    d = relativedelta(months=1)
+    gen_graph(graphs2, (datetime.now()-d).date(), d, days)
 
-# current_month = -1
-# graphs = []
-# for day_iter in headache_days:
-#     # create new month field
-#     if current_month != day_iter.date.month:
-#         current_month = day_iter.date.month
-#         # TODO populate name better
-#         graphs += [GraphData("Headache Intensity")]
-#     # add day data to month
-#     graphs[-1].graph_dates    += [day_iter.date]
-#     graphs[-1].graph_percents += [day_iter.rate]
+    d = relativedelta(months=2)
+    gen_graph(graphs2, (datetime.now()-d).date(), d, days)
 
-# # add "last month"
-# month_ago = datetime.now() - relativedelta(months=1)
-# graphs += [GraphData("Headache Intensity 0-1 scale")]
-# for day_iter in reversed(headache_days):
-#     graphs[-1].graph_dates    += [day_iter.date]
-#     graphs[-1].graph_percents += [day_iter.rate]
-#     if month_ago > day_iter.date:
-#         break
+    html = HeadacheHtmlBuilder(graphs2)
+    html.gen_page()
 
-# graphs[-1].graph_dates.reverse()
-# graphs[-1].graph_percents.reverse()
-
-html = HeadacheHtmlBuilder(graphs2)
-html.gen_page()
+if __name__ == "__main__":
+    main()
