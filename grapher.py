@@ -15,6 +15,8 @@ class HeadacheHtmlBuilder():
 
     def gen_page(self):
         # TODO: use real HTML generator
+        report = ""
+        head_pct_strs = []
         wfile = open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "w")
         for graph in reversed(self.graphs):
             graph_name, graph_dict = graph.gen_graph()
@@ -26,9 +28,10 @@ class HeadacheHtmlBuilder():
             plot(graph_dict, filename=os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/" + filename, auto_open=False)
             wfile.write("<a href=\"%s\">%s</a><br/>"%(filename,graph_name.split("/")[-1]))
             head_pct_str = "%2.2f" % (100.0*head_pct)
+            head_pct_strs += ["%s: %s%%"%(graph_name, head_pct_str)]
             pct_str  = ""
             pct_str += "&emsp;<b>%s&#37;</b> QOL<br/>" % head_pct_str
-            print(pct_str)
+            # print(pct_str)
             pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br/>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
 
             for note in graph.html_notes:
@@ -36,7 +39,8 @@ class HeadacheHtmlBuilder():
 
             pct_str += "<br/>"
             wfile.write(pct_str)
-
+        for e in head_pct_strs[:5]:
+            print(e)
         wfile.close()
 
 class GraphData():
@@ -52,14 +56,27 @@ class GraphData():
     def gen_graph(self):
         traces = []
         # main graph
-        traces += [go.Line(
+        traces += [go.Scatter(
             name = self.name,
             x=self.graph_dates,
             y=[round(x, 2) for x in self.graph_percents],
             text=[str(dates) for dates in self.graph_dates],
             mode='lines+markers',
             hoverinfo='y+x',
-            # line=dict(shape='hv', width=10)
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+        )]
+        traces += [go.Scatter(
+            name = "Feeling bad",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.80, 0.80],
+            opacity=0.7
+        )]
+        traces += [go.Scatter(
+            name = "Feeling good",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.88, 0.88],
+            opacity=0.7
         )]
         for i in range(len(self.annotation_dates)):
             date = self.annotation_dates[i]

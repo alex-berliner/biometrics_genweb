@@ -23,7 +23,7 @@ def gen_graph(graphs, start, delta, days):
     # create GraphData's out of |days|
     runner = start
     while runner < datetime.now().date():
-        keys = sorted([x for x in days if x >= runner and x < (runner + delta)])
+        keys = sorted([x for x in days if x >= runner and x <= (runner + delta)])
         if len(keys) < 1:
             runner += delta
             continue
@@ -38,7 +38,7 @@ def gen_graph(graphs, start, delta, days):
             for event in day:
                 if isinstance(event, str):
                     annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br>==="]
-            if any(annotations):
+            if len(annotations) > 0:
                 graphs[-1].annotation_dates += [date]
                 graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("===")]
 
