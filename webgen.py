@@ -37,10 +37,10 @@ def gen_graph(graphs, start, delta, days):
                     graphs[-1].graph_percents += [event.rate]
             for event in day:
                 if isinstance(event, str):
-                    annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br>==="]
+                    annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
             if len(annotations) > 0:
                 graphs[-1].annotation_dates += [date]
-                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("===")]
+                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*15]
 
         runner += delta
 
