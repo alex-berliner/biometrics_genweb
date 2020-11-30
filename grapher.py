@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 def yearmonth(time):
-    return time.strftime("%b %d %Y")
+    return time.strftime("%b %Y")
 
 WAKING_HRS_PER_WEEK = 16*7
 
@@ -23,15 +23,20 @@ class HeadacheHtmlBuilder():
 
             head_pct = sum(graph.graph_percents)/len(graph.graph_percents)
 
-            filename = "files/%s.html"%(graph_name.replace(" ", ""))
+            link_file = graph_name.replace(" ", "")
+            link_name = graph_name.split("/")[-1]
+            if graph.is_latest:
+                link_file = "last_two_months"
+                link_name = "Last Two Months"
+            filename = "files/%s.html" % link_file
+
             # include_plotlyjs=True not useful, js always needed inside html file
             plot(graph_dict, filename=os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/" + filename, auto_open=False)
-            wfile.write("<a href=\"%s\">%s</a><br/>"%(filename,graph_name.split("/")[-1]))
+            wfile.write("<a href=\"%s\">%s</a><br/>"%(filename,link_name))
             head_pct_str = "%2.2f" % (100.0*head_pct)
             head_pct_strs += ["%s: %s%%"%(graph_name, head_pct_str)]
             pct_str  = ""
             pct_str += "&emsp;<b>%s&#37;</b> QOL<br/>" % head_pct_str
-            # print(pct_str)
             pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br/>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
 
             for note in graph.html_notes:
@@ -39,8 +44,10 @@ class HeadacheHtmlBuilder():
 
             pct_str += "<br/>"
             wfile.write(pct_str)
+
         for e in head_pct_strs[:5]:
             print(e)
+
         wfile.close()
 
 class GraphData():
@@ -52,6 +59,7 @@ class GraphData():
         self.graph_dates      = []
         self.graph_percents   = []
         self.range            = [-0.05, 1.05]
+        self.is_latest        = False
 
     def gen_graph(self):
         traces = []

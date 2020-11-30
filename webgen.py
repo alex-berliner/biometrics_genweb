@@ -128,18 +128,22 @@ def main():
         else:
             days[date] = [med_events["med_events"][i]]
 
-    graphs2 = []
+    graphs_accu = []
 
     d = relativedelta(months=1)
-    gen_graph(graphs2, datetime(2017, 11, 1).date(), d, days)
+    gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
 
-    d = relativedelta(months=1)
-    gen_graph(graphs2, (datetime.now()-d).date(), d, days)
-
+    latest = []
     d = relativedelta(months=2)
-    gen_graph(graphs2, (datetime.now()-d).date(), d, days)
+    gen_graph(latest, (datetime.now()-d).date(), d, days)
+    if len(latest) > 1:
+        print("Too many in latest")
+        exit()
+    else:
+        latest[-1].is_latest = True
+        graphs_accu += latest
 
-    html = HeadacheHtmlBuilder(graphs2)
+    html = HeadacheHtmlBuilder(graphs_accu)
     html.gen_page()
 
 if __name__ == "__main__":
