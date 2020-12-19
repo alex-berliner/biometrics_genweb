@@ -147,7 +147,7 @@ def main():
     graphs_accu = []
 
     # beginning of time
-    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date())
+    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=2))
     mglevel = 0
     hl = 28.0
     days_since_update = 0.0
@@ -172,13 +172,11 @@ def main():
         aimovig_level = round(mglevel * (0.5 ** (days_since_update/hl)))
         days[d] += [AimovigLevel(d, aimovig_level)]
 
-    # for d in daterange:
-    #     d = d.date()
-    #     print(find_aimovig_level(days[d]))
-
-    # exit()
-
     latest = []
+
+    d = relativedelta(months=1)
+    gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
+
     d = relativedelta(months=48)
     gen_graph(latest, (datetime.now()-d).date(), d, days)
     if len(latest) > 1:

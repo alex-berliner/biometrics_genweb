@@ -1,3 +1,4 @@
+import re
 import os
 import plotly.graph_objs as go
 from plotly.offline import plot
@@ -17,7 +18,9 @@ class HeadacheHtmlBuilder():
         # TODO: use real HTML generator
         report = ""
         head_pct_strs = []
-        wfile = open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "w")
+        html_junk = "<br>"
+        # wfile = open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "w")
+        bottom = ""
         for graph in reversed(self.graphs):
             graph_name, graph_dict = graph.gen_graph()
 
@@ -28,46 +31,81 @@ class HeadacheHtmlBuilder():
             if graph.is_latest:
                 link_file = "last_two_months"
                 link_name = "Everything"
-            filename = "files/%s.html" % link_file
+                plot(graph_dict, filename=os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", auto_open=False)
+            # filename = "files/%s.html" % link_file
 
-            # include_plotlyjs=True not useful, js always needed inside html file
-            plot(graph_dict, filename=os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/" + filename, auto_open=False)
-            wfile.write("<a href=\"%s\">%s</a><br/>"%(filename,link_name))
             head_pct_str = "%2.2f" % (100.0*head_pct)
             head_pct_strs += ["%s: %s%%"%(graph_name, head_pct_str)]
             pct_str  = ""
-            pct_str += "&emsp;<b>%s&#37;</b> QOL<br/>" % head_pct_str
-            pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br/>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
+            pct_str += "%s<br>" % link_file
+            pct_str += "&emsp;<b>%s&#37;</b> QOL<br>" % head_pct_str
+            pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
+            takens = [x for x in re.split("  +", " ".join(graph.annotation_text).replace("<br>", " ")) if len(x) > 0]
+            if graph.is_latest:
+                takens = []
 
             for note in graph.html_notes:
                 pct_str += "&emsp;%s" % note
 
-            pct_str += "<br/>"
-            wfile.write(pct_str)
+            pct_str += "<br>"
 
-        for e in head_pct_strs[:5]:
-            print(e)
+            html_junk += pct_str
+            html_junk=html_junk.rstrip("<br>")
+            takens_str = "<br>&emsp;" + "<br>&emsp;".join(takens).lstrip("<br>") + "<br><br>"
+            html_junk += takens_str
 
-        wfile.close()
+        with open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "a") as myfile:
+            myfile.write(html_junk)
 
 class GraphData():
     def __init__(self, name):
-        self.name             = name
-        self.html_notes       = []
-        self.annotation_dates = []
-        self.annotation_text  = []
-        self.graph_dates      = []
-        self.graph_percents   = []
+        self.name                     = name
+        self.html_notes               = []
+        self.annotation_dates         = []
+        self.annotation_text          = []
+        self.graph_dates              = []
+        self.graph_percents           = []
         self.aimovig_level_dates      = []
         self.aimovig_level_percents   = []
-        self.range            = [-0.05, 1.05]
-        self.is_latest        = False
+        self.range                    = [-0.05, 1.05]
+        self.is_latest                = False
 
     def gen_graph(self):
         traces = []
         # main graph
         traces += [go.Scatter(
-            name = self.name,
+            name = "Feeling bad",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.80, 0.80],
+            marker_color='rgba(239, 85, 59, 0.7)',
+        )]
+        traces += [go.Scatter(
+            name = "Feeling good",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.88, 0.88],
+            marker_color='rgba(0, 172, 86, 0.7)'
+        )]
+        traces += [go.Scatter(
+            name = "Aimovig Danger Zone",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.56, 0.56],
+            marker_color='rgba(239, 85, 59, 0.7)',
+            visible = "legendonly",
+        )]
+        traces += [go.Scatter(
+            name = "Aimovig in Blood",
+            x=self.aimovig_level_dates,
+            y=[x/280 for x in self.aimovig_level_percents],
+            text=[self.aimovig_level_percents],
+            mode='lines+markers',
+            hoverinfo='y+x',
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+            marker_color='rgba(165, 165, 49, .7)',
+            visible = "legendonly",
+        )]
+        traces += [go.Scatter(
+            name = "Headache Intensity",
             x=self.graph_dates,
             y=[round(x, 2) for x in self.graph_percents],
             text=[str(dates) for dates in self.graph_dates],
@@ -75,28 +113,7 @@ class GraphData():
             hoverinfo='y+x',
             line_shape='linear',
             line=dict(shape='hv', width=3),
-        )]
-        traces += [go.Scatter(
-            name = self.name,
-            x=self.aimovig_level_dates,
-            y=[x/280 for x in self.aimovig_level_percents],
-            text=[str(dates) for dates in self.graph_dates],
-            mode='lines+markers',
-            hoverinfo='y+x',
-            line_shape='linear',
-            line=dict(shape='hv', width=3),
-        )]
-        traces += [go.Scatter(
-            name = "Feeling bad",
-            x=[self.graph_dates[0], self.graph_dates[-1]],
-            y=[0.80, 0.80],
-            opacity=0.7
-        )]
-        traces += [go.Scatter(
-            name = "Feeling good",
-            x=[self.graph_dates[0], self.graph_dates[-1]],
-            y=[0.88, 0.88],
-            opacity=0.7
+            marker_color='rgba(99, 110, 250, 1)',
         )]
         for i in range(len(self.annotation_dates)):
             date = self.annotation_dates[i]
