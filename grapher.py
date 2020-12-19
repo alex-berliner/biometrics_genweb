@@ -58,6 +58,8 @@ class GraphData():
         self.annotation_text  = []
         self.graph_dates      = []
         self.graph_percents   = []
+        self.aimovig_level_dates      = []
+        self.aimovig_level_percents   = []
         self.range            = [-0.05, 1.05]
         self.is_latest        = False
 
@@ -68,6 +70,16 @@ class GraphData():
             name = self.name,
             x=self.graph_dates,
             y=[round(x, 2) for x in self.graph_percents],
+            text=[str(dates) for dates in self.graph_dates],
+            mode='lines+markers',
+            hoverinfo='y+x',
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+        )]
+        traces += [go.Scatter(
+            name = self.name,
+            x=self.aimovig_level_dates,
+            y=[x/280 for x in self.aimovig_level_percents],
             text=[str(dates) for dates in self.graph_dates],
             mode='lines+markers',
             hoverinfo='y+x',

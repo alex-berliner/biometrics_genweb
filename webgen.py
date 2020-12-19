@@ -19,6 +19,13 @@ class HeadacheDay():
     def __str__(self):
         return "%s %s" % (str(self.date), (self.rate))
 
+class AimovigLevel():
+    def __init__(self, date, rate):
+        self.date = date
+        self.rate = rate
+    def __str__(self):
+        return "%s %s" % (str(self.date), (self.rate))
+
 def gen_graph(graphs, start, delta, days):
     # create GraphData's out of |days|
     runner = start
@@ -38,6 +45,10 @@ def gen_graph(graphs, start, delta, days):
             for event in day:
                 if isinstance(event, str):
                     annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
+            for event in day:
+                if isinstance(event, AimovigLevel):
+                    graphs[-1].aimovig_level_dates    += [event.date]
+                    graphs[-1].aimovig_level_percents += [event.rate]
             if len(annotations) > 0:
                 graphs[-1].annotation_dates += [date]
                 graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*15]
@@ -112,6 +123,11 @@ def get_med_events():
 
     return df
 
+# look for AimovigLevel container in list
+# made because storing AimovigLevel class in list with multiple data types
+def find_aimovig_level(the_list):
+    return [x for x in the_list if isinstance(x, AimovigLevel)][-1]
+
 def main():
     headache_days = get_headache_days()
     med_events = get_med_events()
@@ -130,25 +146,21 @@ def main():
 
     graphs_accu = []
 
-    # d = relativedelta(months=1)
-    # gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
-
-    daterange = pd.date_range(datetime(2017,1,1), datetime(2021,1,1))
-    # for d in daterange:
-    #     print(type(d.date()), d.date())
+    # beginning of time
+    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date())
     mglevel = 0
     hl = 28.0
     days_since_update = 0.0
 
-    # print(23124)
     for d in daterange:
         d = d.date()
-        days_since_update += 1
-        if d not in days:
-            continue
-
         aimovig_count = None
         aimstr=""
+        days_since_update += 1
+        if d not in days:
+            days[d] = [AimovigLevel(d, aimovig_level)]
+            continue
+
         for e in days[d]:
             if isinstance(e, str) and  "aimovig" in e:
                 aimovig_count = 70 if ("fail" in e or "70" in e) else 140
@@ -157,22 +169,27 @@ def main():
         if aimovig_count:
             mglevel = aimovig_count + mglevel * (0.5 ** (days_since_update/hl))
             days_since_update = 0
-        print(d, mglevel * (0.5 ** (days_since_update/hl)), aimstr)
+        aimovig_level = round(mglevel * (0.5 ** (days_since_update/hl)))
+        days[d] += [AimovigLevel(d, aimovig_level)]
 
-    exit()
+    # for d in daterange:
+    #     d = d.date()
+    #     print(find_aimovig_level(days[d]))
 
-    # latest = []
-    # d = relativedelta(months=48)
-    # gen_graph(latest, (datetime.now()-d).date(), d, days)
-    # if len(latest) > 1:
-    #     print("Too many in latest")
-    #     exit()
-    # else:
-    #     latest[-1].is_latest = True
-    #     graphs_accu += latest
+    # exit()
 
-    # html = HeadacheHtmlBuilder(graphs_accu)
-    # html.gen_page()
+    latest = []
+    d = relativedelta(months=48)
+    gen_graph(latest, (datetime.now()-d).date(), d, days)
+    if len(latest) > 1:
+        print("Too many in latest")
+        exit()
+    else:
+        latest[-1].is_latest = True
+        graphs_accu += latest
+
+    html = HeadacheHtmlBuilder(graphs_accu)
+    html.gen_page()
 
 if __name__ == "__main__":
     main()
