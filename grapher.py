@@ -96,7 +96,7 @@ class GraphData():
                 showlegend=False,
                 hoverinfo="none",
                 #    marker_color=event_color,
-                #    width=0.2, #bar width
+                   width=100000000*2.05, #bar width
                 #    customdata=df['description'],
                 #    hovertemplate='date: %{x}<br>event: %{customdata}',
                 opacity=0.3
@@ -118,7 +118,7 @@ class GraphData():
                     "yref": "y"
                 }]
 
-        border_size = (self.graph_dates[-1] - self.graph_dates[0]).total_seconds()/20
+        border_size = 86400/3#(self.graph_dates[-1] - self.graph_dates[0]).total_seconds()/20
         layout = dict(
             annotations= annotations,
             dragmode= "zoom",
@@ -134,15 +134,43 @@ class GraphData():
                 y=0.01,
                 # xanchor="left",
                 x=0.01,
-                bgcolor='rgba(255,255,255,0.75)',
+                bgcolor='rgba(255,255,255,1)',
             ),
             xaxis=dict(
                 type= "date",
-                range= [self.graph_dates[0]-timedelta(seconds=border_size),self.graph_dates[-1]+timedelta(seconds=border_size)],
-                # rangeslider = dict(
-                #     autorange = True,
-                #     range     = [self.graph_dates[0]-timedelta(seconds=border_size),self.graph_dates[-1]+timedelta(seconds=border_size)]
-                # )
+                range = [self.graph_dates[-1]-relativedelta(months=2), self.graph_dates[-1]+timedelta(seconds=border_size)],
+                rangeselector=dict(
+                    buttons=list([
+                        dict(count=1,
+                                label="1m",
+                                step="month",
+                                stepmode="backward"),
+                        dict(count=2,
+                                label="2m",
+                                step="month",
+                                stepmode="backward"),
+                        dict(count=3,
+                                label="3m",
+                                step="month",
+                                stepmode="backward"),
+                        dict(count=6,
+                                label="6m",
+                                step="month",
+                                stepmode="backward"),
+                        dict(count=1,
+                                label="YTD",
+                                step="year",
+                                stepmode="todate"),
+                        dict(count=1,
+                                label="1y",
+                                step="year",
+                                stepmode="backward"),
+                        dict(step="all")
+                    ])
+                ),
+                rangeslider=dict(
+                    visible=True,
+                ),
             ),
             yaxis=dict(
                 range=self.range

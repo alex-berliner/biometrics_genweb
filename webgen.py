@@ -130,11 +130,11 @@ def main():
 
     graphs_accu = []
 
-    d = relativedelta(months=1)
-    gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
+    # d = relativedelta(months=1)
+    # gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
 
     latest = []
-    d = relativedelta(months=2)
+    d = relativedelta(months=48)
     gen_graph(latest, (datetime.now()-d).date(), d, days)
     if len(latest) > 1:
         print("Too many in latest")
