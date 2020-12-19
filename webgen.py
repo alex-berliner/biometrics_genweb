@@ -133,18 +133,46 @@ def main():
     # d = relativedelta(months=1)
     # gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
 
-    latest = []
-    d = relativedelta(months=48)
-    gen_graph(latest, (datetime.now()-d).date(), d, days)
-    if len(latest) > 1:
-        print("Too many in latest")
-        exit()
-    else:
-        latest[-1].is_latest = True
-        graphs_accu += latest
+    daterange = pd.date_range(datetime(2017,1,1), datetime(2021,1,1))
+    # for d in daterange:
+    #     print(type(d.date()), d.date())
+    mglevel = 0
+    hl = 28.0
+    days_since_update = 0.0
 
-    html = HeadacheHtmlBuilder(graphs_accu)
-    html.gen_page()
+    # print(23124)
+    for d in daterange:
+        d = d.date()
+        days_since_update += 1
+        if d not in days:
+            continue
+
+        aimovig_count = None
+        aimstr=""
+        for e in days[d]:
+            if isinstance(e, str) and  "aimovig" in e:
+                aimovig_count = 70 if ("fail" in e or "70" in e) else 140
+                aimstr=e
+                break
+        if aimovig_count:
+            mglevel = aimovig_count + mglevel * (0.5 ** (days_since_update/hl))
+            days_since_update = 0
+        print(d, mglevel * (0.5 ** (days_since_update/hl)), aimstr)
+
+    exit()
+
+    # latest = []
+    # d = relativedelta(months=48)
+    # gen_graph(latest, (datetime.now()-d).date(), d, days)
+    # if len(latest) > 1:
+    #     print("Too many in latest")
+    #     exit()
+    # else:
+    #     latest[-1].is_latest = True
+    #     graphs_accu += latest
+
+    # html = HeadacheHtmlBuilder(graphs_accu)
+    # html.gen_page()
 
 if __name__ == "__main__":
     main()

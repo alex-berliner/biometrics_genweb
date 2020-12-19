@@ -27,7 +27,7 @@ class HeadacheHtmlBuilder():
             link_name = graph_name.split("/")[-1]
             if graph.is_latest:
                 link_file = "last_two_months"
-                link_name = "Last Two Months"
+                link_name = "Everything"
             filename = "files/%s.html" % link_file
 
             # include_plotlyjs=True not useful, js always needed inside html file
