@@ -25,8 +25,11 @@ class AimovigLevel():
         self.rate = rate
     def __str__(self):
         return "%s %s" % (str(self.date), (self.rate))
-
+height_counter = None
 def gen_graph(graphs, start, delta, days):
+    global height_counter
+    if height_counter is None:
+        height_counter = 0
     # create GraphData's out of |days|
     runner = start
     while runner < datetime.now().date():
@@ -51,7 +54,8 @@ def gen_graph(graphs, start, delta, days):
                     graphs[-1].aimovig_level_percents += [event.rate]
             if len(annotations) > 0:
                 graphs[-1].annotation_dates += [date]
-                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*15]
+                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
+                height_counter = (height_counter + 3)%15
 
         runner += delta
 
