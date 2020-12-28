@@ -59,31 +59,30 @@ def gen_graph(graphs, start, delta, days):
 
         runner += delta
 
-# consolidate events in one day into single event
-def consolidate_headache_events(day_accu):
-    if len(day_accu) < 1:
-        return
-
-    maxnight = datetime.combine(day_accu[0].date, datetime.max.time())
-    # maxnight = pytz.timezone("US/Pacific").localize(maxnight)
-    day_accu += [HeadacheDay(maxnight, -1)]
-    conditions = []
-    for i in range(len(day_accu)-1):
-        day = day_accu[i]
-        next_day = day_accu[i+1]
-        conditions += [((next_day.date - day.date).seconds, day.rate)]
-        # print((next_day.date - day.date).seconds, day.rate)
-
-    total_time = sum([x[0] for x in conditions])
-    final_rate = 0
-    for condition in conditions:
-        final_rate += condition[0]/total_time * condition[1]
-
-    midnight = datetime.combine(day_accu[0].date, datetime.min.time())
-    return HeadacheDay(midnight, final_rate)
-
 
 def get_headache_days():
+    # consolidate events in one day into single event
+    def consolidate_headache_events(day_accu):
+        if len(day_accu) < 1:
+            return
+
+        maxnight = datetime.combine(day_accu[0].date, datetime.max.time())
+        # maxnight = pytz.timezone("US/Pacific").localize(maxnight)
+        day_accu += [HeadacheDay(maxnight, -1)]
+        conditions = []
+        for i in range(len(day_accu)-1):
+            day = day_accu[i]
+            next_day = day_accu[i+1]
+            conditions += [((next_day.date - day.date).seconds, day.rate)]
+            # print((next_day.date - day.date).seconds, day.rate)
+
+        total_time = sum([x[0] for x in conditions])
+        final_rate = 0
+        for condition in conditions:
+            final_rate += condition[0]/total_time * condition[1]
+
+        midnight = datetime.combine(day_accu[0].date, datetime.min.time())
+        return HeadacheDay(midnight, final_rate)
     rows = []
     with open(headache_filename, 'r') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -135,9 +134,9 @@ def find_aimovig_level(the_list):
     return [x for x in the_list if isinstance(x, AimovigLevel)][-1]
 
 # perform 20 day running average on headache data
-def create_averaged_headache_days():
+def create_running_average_headache_days(headache_function):
     # split rate values out of headache events, average them, then insert back into headache events
-    headache_days = get_headache_days()
+    headache_days = headache_function()
     day_average = 20.0
     avgq=[]
     hen = []
@@ -159,9 +158,60 @@ def create_averaged_headache_days():
 
     return headache_days
 
+def get_headache_min_days():
+    # consolidate events in one day into single event
+    def minimize_headache_events(day_accu):
+        if len(day_accu) < 1:
+            return
+
+        maxnight = datetime.combine(day_accu[0].date, datetime.max.time())
+        # maxnight = pytz.timezone("US/Pacific").localize(maxnight)
+        day_accu += [HeadacheDay(maxnight, -1)]
+        conditions = []
+        for i in range(len(day_accu)-1):
+            day = day_accu[i]
+            next_day = day_accu[i+1]
+            conditions += [((next_day.date - day.date).seconds, day.rate)]
+            # print((next_day.date - day.date).seconds, day.rate)
+
+        total_time = sum([x[0] for x in conditions])
+        final_rate = min([x[1] for x in conditions])
+
+        midnight = datetime.combine(day_accu[0].date, datetime.min.time())
+        return HeadacheDay(midnight, final_rate)
+
+    rows = []
+    with open(headache_filename, 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        for row in csvreader:
+            rows.append(row)
+
+    headache_events = []
+    for row in rows[1:]:
+        date = datetime.fromtimestamp(int(row[0]))
+        rate = float(row[1])/100
+        day = HeadacheDay(date, rate)
+        headache_events += [day]
+    headache_days = []
+    current_day = -1
+    day_accu = []
+
+    runner = datetime(2017, 1, 1)
+    d = relativedelta(days=1)
+    while runner < datetime.now():
+        t1 = runner
+        t2 = runner + d
+        selection = [x for x in headache_events if t1 <= x.date and x.date < t2]
+        runner += d
+        if len(selection) > 0:
+            ret = minimize_headache_events(selection)
+            headache_days += [ret]
+
+    return headache_days
+
 def main():
-    # create_averaged_headache_days()
-    headache_days = create_averaged_headache_days() #get_headache_days()
+    headache_days = create_running_average_headache_days(get_headache_days)
+    min_headache_days = create_running_average_headache_days(get_headache_min_days)
     med_events = get_med_events()
 
     days = OrderedDict()
@@ -196,7 +246,7 @@ def main():
         for e in days[d]:
             if isinstance(e, str) and  "aimovig" in e:
                 aimovig_count = 70 if ("fail" in e or "70" in e) else 140
-                aimstr=e
+                aimstr = e
                 break
         if aimovig_count:
             mglevel = aimovig_count + mglevel * (0.5 ** (days_since_update/hl))
