@@ -65,6 +65,8 @@ class GraphData():
         self.annotation_text          = []
         self.graph_dates              = []
         self.graph_percents           = []
+        self.min_graph_percents       = []
+        self.min_graph_dates          = []
         self.aimovig_level_dates      = []
         self.aimovig_level_percents   = []
         self.range                    = [-0.05, 1.05]
@@ -86,26 +88,13 @@ class GraphData():
             marker_color='rgba(0, 172, 86, 0.7)'
         )]
         traces += [go.Scatter(
-            name = "Aimovig Danger Zone",
+            name = "Headache Attack",
             x=[self.graph_dates[0], self.graph_dates[-1]],
-            y=[0.56, 0.56],
+            y=[0.75, 0.75],
             marker_color='rgba(239, 85, 59, 0.7)',
-            visible = "legendonly",
         )]
         traces += [go.Scatter(
-            name = "Aimovig in Blood",
-            x=self.aimovig_level_dates,
-            y=[x/280 for x in self.aimovig_level_percents],
-            text=[self.aimovig_level_percents],
-            mode='lines+markers',
-            hoverinfo='y+x',
-            line_shape='linear',
-            line=dict(shape='hv', width=3),
-            marker_color='rgba(165, 165, 49, .7)',
-            visible = "legendonly",
-        )]
-        traces += [go.Scatter(
-            name = "Headache Intensity",
+            name = "Headache Avg Intensity",
             x=self.graph_dates,
             y=[round(x, 2) for x in self.graph_percents],
             text=[str(dates) for dates in self.graph_dates],
@@ -114,6 +103,18 @@ class GraphData():
             line_shape='linear',
             line=dict(shape='hv', width=3),
             marker_color='rgba(99, 110, 250, 1)',
+        )]
+        traces += [go.Scatter(
+            name = "Headache Max Intensity",
+            x=self.min_graph_dates,
+            y=[round(x, 2) for x in self.min_graph_percents],
+            text=[str(dates) for dates in self.min_graph_dates],
+            mode='lines+markers',
+            hoverinfo='y+x',
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+            marker_color='rgba(250, 20, 20, 1)',
+            visible = "legendonly",
         )]
         for i in range(len(self.annotation_dates)):
             date = self.annotation_dates[i]
@@ -130,6 +131,25 @@ class GraphData():
                 #    hovertemplate='date: %{x}<br>event: %{customdata}',
                 opacity=0.3
                 )]
+        traces += [go.Scatter(
+            name = "Aimovig in Blood",
+            x=self.aimovig_level_dates,
+            y=[x/280 for x in self.aimovig_level_percents],
+            text=[self.aimovig_level_percents],
+            mode='lines+markers',
+            hoverinfo='y+x',
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+            marker_color='rgba(165, 165, 49, .7)',
+            visible = "legendonly",
+        )]
+        traces += [go.Scatter(
+            name = "Aimovig Level Danger",
+            x=[self.graph_dates[0], self.graph_dates[-1]],
+            y=[0.56, 0.56],
+            marker_color='rgba(239, 85, 59, 0.7)',
+            visible = "legendonly",
+        )]
 
         annotations = []
         for i in range(len(self.annotation_text)):
