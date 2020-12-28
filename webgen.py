@@ -59,7 +59,8 @@ def gen_graph(graphs, start, delta, days):
 
         runner += delta
 
-def consolidate_events(day_accu):
+# consolidate events in one day into single event
+def consolidate_headache_events(day_accu):
     if len(day_accu) < 1:
         return
 
@@ -80,6 +81,7 @@ def consolidate_events(day_accu):
 
     midnight = datetime.combine(day_accu[0].date, datetime.min.time())
     return HeadacheDay(midnight, final_rate)
+
 
 def get_headache_days():
     rows = []
@@ -106,7 +108,7 @@ def get_headache_days():
         selection = [x for x in headache_events if t1 <= x.date and x.date < t2]
         runner += d
         if len(selection) > 0:
-            ret = consolidate_events(selection)
+            ret = consolidate_headache_events(selection)
             headache_days += [ret]
 
     return headache_days
@@ -132,8 +134,34 @@ def get_med_events():
 def find_aimovig_level(the_list):
     return [x for x in the_list if isinstance(x, AimovigLevel)][-1]
 
-def main():
+# perform 20 day running average on headache data
+def create_averaged_headache_days():
+    # split rate values out of headache events, average them, then insert back into headache events
     headache_days = get_headache_days()
+    day_average = 20.0
+    avgq=[]
+    hen = []
+    # make array of rates from events, then make averages
+    dayvals = [x.rate for x in headache_days]
+    for e in dayvals:
+        avgq.append(e)
+        if len(avgq) > day_average:
+            avgq = avgq[1:]
+        hen += [float(sum(avgq)/day_average)]
+
+    # replace average data with raw data for last 120 days
+    raw_count = 120
+    last_x = dayvals[-raw_count:]
+    hen[-raw_count:] = last_x
+    # splice back into events
+    for i in range(len(hen)):
+        headache_days[i].rate = hen[i]
+
+    return headache_days
+
+def main():
+    # create_averaged_headache_days()
+    headache_days = create_averaged_headache_days() #get_headache_days()
     med_events = get_med_events()
 
     days = OrderedDict()
@@ -192,6 +220,7 @@ def main():
 
     html = HeadacheHtmlBuilder(graphs_accu)
     html.gen_page()
+
 
 if __name__ == "__main__":
     main()
