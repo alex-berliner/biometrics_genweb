@@ -34,29 +34,34 @@ def gen_graph(graphs, days):
     if height_counter is None:
         height_counter = 0
     keys = sorted([x for x in days])
-    graphs += [GraphData("Headache Intensity")]
+    graph_data = GraphData("Headache Intensity")
     for date in keys:
         day = days[date]
         annotations = []
         # print(day)
         for event in day:
             if isinstance(event, HeadacheDay) and event.htype == "headache_run_avg":
-                graphs[-1].graph_dates_run_avg    += [event.date]
-                graphs[-1].graph_percents_run_avg += [event.rate]
+                graph_data.graph_dates_run_avg    += [event.date]
+                graph_data.graph_percents_run_avg += [event.rate]
             elif isinstance(event, HeadacheDay) and event.htype == "headache_min":
-                graphs[-1].min_graph_dates    += [event.date]
-                graphs[-1].min_graph_percents += [event.rate]
+                graph_data.min_graph_dates    += [event.date]
+                graph_data.min_graph_percents += [event.rate]
+            elif isinstance(event, HeadacheDay) and event.htype == "headache_raw":
+                graph_data.graph_dates_raw    += [event.date]
+                graph_data.graph_percents_raw += [event.rate]
         for event in day:
             if isinstance(event, str):
                 annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
         for event in day:
             if isinstance(event, AimovigLevel):
-                graphs[-1].aimovig_level_dates    += [event.date]
-                graphs[-1].aimovig_level_mg += [event.rate]
+                graph_data.aimovig_level_dates    += [event.date]
+                graph_data.aimovig_level_mg += [event.rate]
         if len(annotations) > 0:
-            graphs[-1].annotation_dates += [date]
-            graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
+            graph_data.annotation_dates += [date]
+            graph_data.annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
             height_counter = (height_counter + 3)%15
+
+    return graph_data
 
 
 def get_headache_days(htype):
@@ -211,7 +216,7 @@ def get_headache_min_days(htype):
 def main():
     headache_days_run_avg = create_running_average_headache_days(get_headache_days, "headache_run_avg")
     headache_days_min = create_running_average_headache_days(get_headache_min_days, "headache_min")
-    # headache_days_raw = get_headache_days()
+    headache_days_raw = get_headache_days("headache_raw")
     med_events = get_med_events()
 
     days = OrderedDict()
@@ -219,6 +224,9 @@ def main():
         days[day_iter.date.date()] = [day_iter]
 
     for day_iter in headache_days_min:
+        days[day_iter.date.date()] += [day_iter]
+
+    for day_iter in headache_days_raw:
         days[day_iter.date.date()] += [day_iter]
 
     # combine headache and med events into |days|
@@ -259,17 +267,17 @@ def main():
     latest = []
 
     graphs_accu = []
-    # used for text only
-    gen_graph(graphs_accu, days)
+    # # used for text only
+    # gen_graph(graphs_accu, days)
 
     # used for graph and text
-    gen_graph(latest, days)
-    if len(latest) > 1:
-        print("Too many in latest")
-        exit()
-    else:
-        latest[-1].is_latest = True
-        graphs_accu += latest
+    latest = [gen_graph(latest, days)]
+    # if len(latest) > 1:
+    #     print("Too many in latest")
+    #     exit()
+    # else:
+    latest[-1].is_latest = True
+    graphs_accu = latest
 
     html = HeadacheHtmlBuilder(graphs_accu)
     html.gen_page()

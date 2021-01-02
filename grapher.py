@@ -99,6 +99,18 @@ class GraphData():
             marker_color='rgba(239, 85, 59, 0.7)',
         )]
         traces += [go.Scatter(
+            name = "Headache Raw Intensity",
+            x=self.graph_dates_raw,
+            y=[round(x, 2) for x in self.graph_percents_raw],
+            text=[str(dates) for dates in self.graph_dates_raw],
+            mode='lines+markers',
+            hoverinfo='y+x',
+            line_shape='linear',
+            line=dict(shape='hv', width=3),
+            marker_color='rgba(174, 142, 240, 1)',
+            visible = "legendonly",
+        )]
+        traces += [go.Scatter(
             name = "Headache Avg Intensity",
             x=self.graph_dates_run_avg,
             y=[round(x, 2) for x in self.graph_percents_run_avg],
