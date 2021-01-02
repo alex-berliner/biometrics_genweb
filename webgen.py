@@ -215,7 +215,7 @@ def get_headache_min_days(htype):
 
 def main():
     headache_days_run_avg = create_running_average_headache_days(get_headache_days, "headache_run_avg")
-    headache_days_min = create_running_average_headache_days(get_headache_min_days, "headache_min")
+    headache_days_min = get_headache_min_days("headache_min")
     headache_days_raw = get_headache_days("headache_raw")
     med_events = get_med_events()
 
