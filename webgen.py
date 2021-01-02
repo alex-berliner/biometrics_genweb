@@ -52,7 +52,7 @@ def gen_graph(graphs, days):
         for event in day:
             if isinstance(event, AimovigLevel):
                 graphs[-1].aimovig_level_dates    += [event.date]
-                graphs[-1].aimovig_level_percents += [event.rate]
+                graphs[-1].aimovig_level_mg += [event.rate]
         if len(annotations) > 0:
             graphs[-1].annotation_dates += [date]
             graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
@@ -219,7 +219,6 @@ def main():
 
     for day_iter in min_headache_days:
         days[day_iter.date.date()] += [day_iter]
-        # print(days[day_iter.date.date()])
 
     # combine headache and med events into |days|
     for i in range(len(med_events)):
@@ -230,14 +229,13 @@ def main():
             days[date] = [med_events["med_events"][i]]
 
     # beginning of time
-    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=2))
+    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=3))
     mglevel = 0
     hl = 28.0
     days_since_update = 0.0
 
     for d in daterange:
         d = d.date()
-        # print(d)
         aimovig_count = None
         aimstr=""
         days_since_update += 1

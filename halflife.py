@@ -8,4 +8,4 @@ for i in range(45):
     print("hi: %d\n" % round(add + start * 0.5 ** (time/hl)))
 # print(start)
 
-print(265 * 0.5 ** (21.0/28.0))
+print(265 * 0.5 ** (21.0/28.0)) # 157.57
