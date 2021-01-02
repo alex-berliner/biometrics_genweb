@@ -11,51 +11,42 @@ def yearmonth(time):
 
 WAKING_HRS_PER_WEEK = 16*7
 
-class HeadacheHtmlBuilder():
-    def __init__(self, graphs):
-        self.graphs = graphs
+def gen_html(graph):
+    # TODO: use real HTML generator
+    graph_name, fig = graph.gen_graph_data()
 
-    def gen_page(self):
-        # TODO: use real HTML generator
-        report = ""
-        head_pct_strs = []
-        html_junk = "<br>"
-        bottom = ""
-        for graph in reversed(self.graphs):
-            # graph_dict has traces
-            graph_name, fig = graph.gen_graph()
+    link_file = graph_name.replace(" ", "")
+    link_name = graph_name.split("/")[-1]
+    if graph.is_latest:
+        link_file = "last_two_months"
+        link_name = "Everything"
+        fig.write_html(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html")
 
-            head_pct = sum(graph.graph_percents_run_avg)/len(graph.graph_percents_run_avg)
+    # head_pct = sum(graph.graph_percents_run_avg)/len(graph.graph_percents_run_avg)
+    # head_pct_strs = []
+    # html_junk = "<br>"
+    # head_pct_str = "%2.2f" % (100.0*head_pct)
+    # head_pct_strs += ["%s: %s%%"%(graph_name, head_pct_str)]
+    # pct_str  = ""
+    # pct_str += "%s<br>" % link_file
+    # pct_str += "&emsp;<b>%s&#37;</b> QOL<br>" % head_pct_str
+    # pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
+    # takens = [x for x in re.split("  +", " ".join(graph.annotation_text).replace("<br>", " ")) if len(x) > 0]
+    # if graph.is_latest:
+    #     takens = []
 
-            link_file = graph_name.replace(" ", "")
-            link_name = graph_name.split("/")[-1]
-            if graph.is_latest:
-                link_file = "last_two_months"
-                link_name = "Everything"
-                fig.write_html(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html")
+    # for note in graph.html_notes:
+    #     pct_str += "&emsp;%s" % note
 
-            head_pct_str = "%2.2f" % (100.0*head_pct)
-            head_pct_strs += ["%s: %s%%"%(graph_name, head_pct_str)]
-            pct_str  = ""
-            pct_str += "%s<br>" % link_file
-            pct_str += "&emsp;<b>%s&#37;</b> QOL<br>" % head_pct_str
-            pct_str += "&emsp;<b>%d/%d</b> usable waking hours weekly<br>" % (head_pct*WAKING_HRS_PER_WEEK, WAKING_HRS_PER_WEEK)
-            takens = [x for x in re.split("  +", " ".join(graph.annotation_text).replace("<br>", " ")) if len(x) > 0]
-            if graph.is_latest:
-                takens = []
+    # pct_str += "<br>"
 
-            for note in graph.html_notes:
-                pct_str += "&emsp;%s" % note
+    # html_junk += pct_str
+    # html_junk=html_junk.rstrip("<br>")
+    # takens_str = "<br>&emsp;" + "<br>&emsp;".join(takens).lstrip("<br>") + "<br><br>"
+    # html_junk += takens_str
 
-            pct_str += "<br>"
-
-            html_junk += pct_str
-            html_junk=html_junk.rstrip("<br>")
-            takens_str = "<br>&emsp;" + "<br>&emsp;".join(takens).lstrip("<br>") + "<br><br>"
-            html_junk += takens_str
-
-        with open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "a") as myfile:
-            myfile.write(html_junk)
+    # with open(os.environ["BIOMETRICS_ROOT"] + "/web_biometrics/index.html", "a") as myfile:
+    #     myfile.write(html_junk)
 
 class GraphData():
     def __init__(self, name):
@@ -74,7 +65,7 @@ class GraphData():
         self.range                    = [0, 1.05]
         self.is_latest                = False
 
-    def gen_graph(self):
+    def gen_graph_data(self):
         # Create figure with secondary y-axis
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 

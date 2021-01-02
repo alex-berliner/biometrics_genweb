@@ -29,7 +29,7 @@ class AimovigLevel():
 
 # height of the current bar graph text
 height_counter = None
-def gen_graph(graphs, days):
+def gen_graph_data(graphs, days):
     global height_counter
     if height_counter is None:
         height_counter = 0
@@ -264,24 +264,10 @@ def main():
         aimovig_level = round(mglevel * (0.5 ** (days_since_update/hl)))
         days[d] += [AimovigLevel(d, aimovig_level)]
 
-    latest = []
+    graph_data = gen_graph_data([], days)
+    graph_data.is_latest = True
 
-    graphs_accu = []
-    # # used for text only
-    # gen_graph(graphs_accu, days)
-
-    # used for graph and text
-    latest = [gen_graph(latest, days)]
-    # if len(latest) > 1:
-    #     print("Too many in latest")
-    #     exit()
-    # else:
-    latest[-1].is_latest = True
-    graphs_accu = latest
-
-    html = HeadacheHtmlBuilder(graphs_accu)
-    html.gen_page()
-
+    gen_html(graph_data)
 
 if __name__ == "__main__":
     main()
