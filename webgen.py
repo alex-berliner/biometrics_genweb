@@ -29,16 +29,16 @@ class AimovigLevel():
 
 # height of the current bar graph text
 height_counter = None
-def gen_graph_data(graphs, days):
+def gen_graph_data(days):
     global height_counter
     if height_counter is None:
         height_counter = 0
     keys = sorted([x for x in days])
     graph_data = GraphData("Headache Intensity")
+
     for date in keys:
         day = days[date]
         annotations = []
-        # print(day)
         for event in day:
             if isinstance(event, HeadacheDay) and event.htype == "headache_run_avg":
                 graph_data.graph_dates_run_avg    += [event.date]
@@ -54,8 +54,8 @@ def gen_graph_data(graphs, days):
                 annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
         for event in day:
             if isinstance(event, AimovigLevel):
-                graph_data.aimovig_level_dates    += [event.date]
-                graph_data.aimovig_level_mg += [event.rate]
+                graph_data.aimovig_level_dates += [event.date]
+                graph_data.aimovig_level_mg    += [event.rate]
         if len(annotations) > 0:
             graph_data.annotation_dates += [date]
             graph_data.annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
@@ -237,6 +237,28 @@ def main():
         else:
             days[date] = [med_events["med_events"][i]]
 
+    # code fragment to add more aimovig take events in the future
+    # # get last aimovig date
+    # last_aimovig_date = None
+    # for date in reversed(days):
+    #     day = days[date]
+    #     annotations = []
+    #     # print(day)
+    #     for event in day:
+    #         if isinstance(event, str) and "aimovig" in event:
+    #             print(event)
+    #             last_aimovig_date = date
+    #             break
+    #     if last_aimovig_date:
+    #         break
+
+    # # print(days[last_aimovig_date])
+    # # print(last_aimovig_date)
+    # runner = last_aimovig_date
+    # for i in range(6):
+    #     days[runner + relativedelta(days=15)] += ["took aimovig 70 mg"]
+    #     runner += relativedelta(days=15)
+
     # beginning of time
     daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=3))
     mglevel = 0
@@ -264,7 +286,7 @@ def main():
         aimovig_level = round(mglevel * (0.5 ** (days_since_update/hl)))
         days[d] += [AimovigLevel(d, aimovig_level)]
 
-    graph_data = gen_graph_data([], days)
+    graph_data = gen_graph_data(days)
     graph_data.is_latest = True
 
     gen_html(graph_data)
