@@ -88,6 +88,7 @@ class GraphData():
             x=[self.graph_dates_run_avg[0], self.graph_dates_run_avg[-1] + relativedelta(months=3)],
             y=[0.75, 0.75],
             marker_color='rgba(239, 85, 59, 0.7)',
+            visible = "legendonly",
         )]
         traces += [go.Scatter(
             name = "Headache Raw Intensity",
