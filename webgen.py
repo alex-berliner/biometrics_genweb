@@ -26,43 +26,37 @@ class AimovigLevel():
         self.rate = rate
     def __str__(self):
         return "%s %s" % (str(self.date), (self.rate))
+
+# height of the current bar graph text
 height_counter = None
-def gen_graph(graphs, start, delta, days):
+def gen_graph(graphs, days):
     global height_counter
     if height_counter is None:
         height_counter = 0
-    # create GraphData's out of |days|
-    runner = start
-    while runner < datetime.now().date():
-        keys = sorted([x for x in days if x >= runner and x <= (runner + delta)])
-        if len(keys) < 1:
-            runner += delta
-            continue
-        graphs += [GraphData("Headache Intensity")]
-        for date in keys:
-            day = days[date]
-            annotations = []
-            # print(day)
-            for event in day:
-                if isinstance(event, HeadacheDay) and event.htype == "headache":
-                    graphs[-1].graph_dates    += [event.date]
-                    graphs[-1].graph_percents += [event.rate]
-                elif isinstance(event, HeadacheDay) and event.htype == "headache_min":
-                    graphs[-1].min_graph_dates    += [event.date]
-                    graphs[-1].min_graph_percents += [event.rate]
-            for event in day:
-                if isinstance(event, str):
-                    annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
-            for event in day:
-                if isinstance(event, AimovigLevel):
-                    graphs[-1].aimovig_level_dates    += [event.date]
-                    graphs[-1].aimovig_level_percents += [event.rate]
-            if len(annotations) > 0:
-                graphs[-1].annotation_dates += [date]
-                graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
-                height_counter = (height_counter + 3)%15
-
-        runner += delta
+    keys = sorted([x for x in days])
+    graphs += [GraphData("Headache Intensity")]
+    for date in keys:
+        day = days[date]
+        annotations = []
+        # print(day)
+        for event in day:
+            if isinstance(event, HeadacheDay) and event.htype == "headache":
+                graphs[-1].graph_dates    += [event.date]
+                graphs[-1].graph_percents += [event.rate]
+            elif isinstance(event, HeadacheDay) and event.htype == "headache_min":
+                graphs[-1].min_graph_dates    += [event.date]
+                graphs[-1].min_graph_percents += [event.rate]
+        for event in day:
+            if isinstance(event, str):
+                annotations += [event.replace(" mg", "mg").replace(" ", "<br>") + "<br><br>"]
+        for event in day:
+            if isinstance(event, AimovigLevel):
+                graphs[-1].aimovig_level_dates    += [event.date]
+                graphs[-1].aimovig_level_percents += [event.rate]
+        if len(annotations) > 0:
+            graphs[-1].annotation_dates += [date]
+            graphs[-1].annotation_text  += ["<br>".join(annotations).rstrip("<br>") + "<br> "*height_counter]
+            height_counter = (height_counter + 3)%15
 
 
 def get_headache_days():
@@ -223,8 +217,6 @@ def main():
     for day_iter in headache_days:
         days[day_iter.date.date()] = [day_iter]
 
-    # print(len(headache_days))
-    # print(len(min_headache_days))
     for day_iter in min_headache_days:
         days[day_iter.date.date()] += [day_iter]
         # print(days[day_iter.date.date()])
@@ -237,8 +229,6 @@ def main():
         else:
             days[date] = [med_events["med_events"][i]]
 
-    graphs_accu = []
-
     # beginning of time
     daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=2))
     mglevel = 0
@@ -247,10 +237,12 @@ def main():
 
     for d in daterange:
         d = d.date()
+        # print(d)
         aimovig_count = None
         aimstr=""
         days_since_update += 1
         if d not in days:
+            aimovig_level = round(mglevel * (0.5 ** (days_since_update/hl)))
             days[d] = [AimovigLevel(d, aimovig_level)]
             continue
 
@@ -267,11 +259,12 @@ def main():
 
     latest = []
 
-    d = relativedelta(months=1)
-    gen_graph(graphs_accu, datetime(2017, 11, 1).date(), d, days)
+    graphs_accu = []
+    # used for text only
+    gen_graph(graphs_accu, days)
 
-    d = relativedelta(months=48)
-    gen_graph(latest, (datetime.now()-d).date(), d, days)
+    # used for graph and text
+    gen_graph(latest, days)
     if len(latest) > 1:
         print("Too many in latest")
         exit()
