@@ -25,7 +25,7 @@ class HeadacheHtmlBuilder():
             # graph_dict has traces
             graph_name, fig = graph.gen_graph()
 
-            head_pct = sum(graph.graph_percents)/len(graph.graph_percents)
+            head_pct = sum(graph.graph_percents_run_avg)/len(graph.graph_percents_run_avg)
 
             link_file = graph_name.replace(" ", "")
             link_name = graph_name.split("/")[-1]
@@ -63,12 +63,14 @@ class GraphData():
         self.html_notes               = []
         self.annotation_dates         = []
         self.annotation_text          = []
-        self.graph_dates              = []
-        self.graph_percents           = []
+        self.graph_dates_raw          = []
+        self.graph_percents_raw       = []
+        self.graph_dates_run_avg      = []
+        self.graph_percents_run_avg   = []
         self.min_graph_percents       = []
         self.min_graph_dates          = []
         self.aimovig_level_dates      = []
-        self.aimovig_level_mg   = []
+        self.aimovig_level_mg         = []
         self.range                    = [0, 1.05]
         self.is_latest                = False
 
@@ -80,27 +82,27 @@ class GraphData():
         traces = []
         traces += [go.Scatter(
             name = "Feeling bad",
-            x=[self.graph_dates[0], self.graph_dates[-1] + relativedelta(months=3)],
+            x=[self.graph_dates_run_avg[0], self.graph_dates_run_avg[-1] + relativedelta(months=3)],
             y=[0.80, 0.80],
             marker_color='rgba(239, 85, 59, 0.7)',
         )]
         traces += [go.Scatter(
             name = "Feeling good",
-            x=[self.graph_dates[0], self.graph_dates[-1] + relativedelta(months=3)],
+            x=[self.graph_dates_run_avg[0], self.graph_dates_run_avg[-1] + relativedelta(months=3)],
             y=[0.88, 0.88],
             marker_color='rgba(0, 172, 86, 0.7)'
         )]
         traces += [go.Scatter(
             name = "Headache Attack",
-            x=[self.graph_dates[0], self.graph_dates[-1] + relativedelta(months=3)],
+            x=[self.graph_dates_run_avg[0], self.graph_dates_run_avg[-1] + relativedelta(months=3)],
             y=[0.75, 0.75],
             marker_color='rgba(239, 85, 59, 0.7)',
         )]
         traces += [go.Scatter(
             name = "Headache Avg Intensity",
-            x=self.graph_dates,
-            y=[round(x, 2) for x in self.graph_percents],
-            text=[str(dates) for dates in self.graph_dates],
+            x=self.graph_dates_run_avg,
+            y=[round(x, 2) for x in self.graph_percents_run_avg],
+            text=[str(dates) for dates in self.graph_dates_run_avg],
             mode='lines+markers',
             hoverinfo='y+x',
             line_shape='linear',
@@ -144,7 +146,7 @@ class GraphData():
         )
         ald = go.Scatter(
             name = "Aimovig Level Danger",
-            x=[self.graph_dates[0], self.graph_dates[-1] + relativedelta(months=3)],
+            x=[self.graph_dates_run_avg[0], self.graph_dates_run_avg[-1] + relativedelta(months=3)],
             y=[157.57, 157.57],
             marker_color='rgba(239, 85, 59, 0.7)',
             visible = "legendonly",
@@ -187,8 +189,8 @@ class GraphData():
             xaxis=dict(
                 type= "date",
                 # length of the whole graph
-                range = [self.graph_dates[-1]-relativedelta(months=3),
-                         self.graph_dates[-1]+timedelta(seconds=border_size)],
+                range = [self.graph_dates_run_avg[-1]-relativedelta(months=3),
+                         self.graph_dates_run_avg[-1]+timedelta(seconds=border_size)],
                 rangeselector=dict(
                     buttons=list([
                         dict(count=1, label="1m",  step="month", stepmode="backward"),
@@ -208,8 +210,8 @@ class GraphData():
                 range=self.range
             )
         )
-        start = self.graph_dates[0]
-        end   = self.graph_dates[-1]
+        start = self.graph_dates_run_avg[0]
+        end   = self.graph_dates_run_avg[-1]
         name = "%s --- %s"%(yearmonth(start), yearmonth(end))
 
         return name, fig
