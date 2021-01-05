@@ -154,8 +154,8 @@ def create_running_average_headache_days(headache_function, htype):
 
     # replace average data with raw data for last 120 days
     raw_count = 120
-    last_x = dayvals[-raw_count:]
-    hen[-raw_count:] = last_x
+    # last_x = dayvals[-raw_count:]
+    # hen[-raw_count:] = last_x
     # splice back into events
     for i in range(len(hen)):
         headache_days[i].rate = hen[i]
@@ -213,6 +213,27 @@ def get_headache_min_days(htype):
 
     return headache_days
 
+# add projected aimovig injection events on a 15 day cycle to show how half-life decay and rebound will play out
+def add_future_aimovig_events(days):
+    # find last aimovig injection event
+    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=3))
+    last_aimovig_date = None
+    for d in daterange:
+        d = d.date()
+        if d in days:
+            for event in reversed(days[d]):
+                if isinstance(event, str) and "aimovig" in event:
+                    last_aimovig_date = d
+
+    # inject extra aimovig events into event container @days
+    runner = last_aimovig_date
+    for i in range(5):
+        didx = runner + relativedelta(days=15)
+        if didx not in days:
+            days[didx] = []
+        days[didx] += ["took aimovig 70 mg"]
+        runner += relativedelta(days=15)
+
 def main():
     headache_days_run_avg = create_running_average_headache_days(get_headache_days, "headache_run_avg")
     headache_days_min = get_headache_min_days("headache_min")
@@ -237,34 +258,14 @@ def main():
         else:
             days[date] = [med_events["med_events"][i]]
 
-    # code fragment to add more aimovig take events in the future
-    # # get last aimovig date
-    # last_aimovig_date = None
-    # for date in reversed(days):
-    #     day = days[date]
-    #     annotations = []
-    #     # print(day)
-    #     for event in day:
-    #         if isinstance(event, str) and "aimovig" in event:
-    #             print(event)
-    #             last_aimovig_date = date
-    #             break
-    #     if last_aimovig_date:
-    #         break
+    add_future_aimovig_events(days)
 
-    # # print(days[last_aimovig_date])
-    # # print(last_aimovig_date)
-    # runner = last_aimovig_date
-    # for i in range(6):
-    #     days[runner + relativedelta(days=15)] += ["took aimovig 70 mg"]
-    #     runner += relativedelta(days=15)
-
-    # beginning of time
-    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=3))
     mglevel = 0
     hl = 28.0
     days_since_update = 0.0
 
+    # beginning of time
+    daterange = pd.date_range(datetime(2018,9,5), datetime.now().date()+relativedelta(months=3))
     for d in daterange:
         d = d.date()
         aimovig_count = None

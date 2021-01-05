@@ -125,6 +125,22 @@ class GraphData():
             marker_color='rgba(250, 20, 20, 1)',
             visible = "legendonly",
         )]
+
+        annotations = []
+        for i in range(len(self.annotation_text)):
+            annotations += \
+                [{
+                    "x": self.annotation_dates[i],
+                    "y": 0.10,
+                    "arrowcolor": "rgba(63, 81, 181, 0.2)",
+                    "arrowsize": 0.3,
+                    "ax": 0,
+                    "ay": 30,
+                    "text": self.annotation_text[i],
+                    "xref": "x",
+                    "yanchor": "bottom",
+                    "yref": "y"
+                }]
         for i in range(len(self.annotation_dates)):
             date = self.annotation_dates[i]
             text = self.annotation_text[i]
@@ -136,6 +152,7 @@ class GraphData():
                                 width=100000000*2.05, #bar width
                                 opacity=0.3
                                 ) ]
+
         aib = go.Scatter(
             name = "Aimovig in Blood",
             x=self.aimovig_level_dates,
@@ -164,31 +181,11 @@ class GraphData():
         fig.add_trace(aib, secondary_y=True)
         fig.add_trace(ald, secondary_y=True)
 
-        annotations = []
-        for i in range(len(self.annotation_text)):
-            annotations += \
-                [{
-                    "x": self.annotation_dates[i],
-                    "y": 0.10,
-                    "arrowcolor": "rgba(63, 81, 181, 0.2)",
-                    "arrowsize": 0.3,
-                    "ax": 0,
-                    "ay": 30,
-                    "text": self.annotation_text[i],
-                    "xref": "x",
-                    "yanchor": "bottom",
-                    "yref": "y"
-                }]
-
         border_size = 86400/3
         fig.update_layout(
-            annotations= annotations,
-            dragmode= "zoom",
-            legend=dict(
-                font=dict( size=16 ),
-                y=0.01,
-                x=0.01,
-                bgcolor='rgba(255,255,255,1)',
+                annotations= annotations,
+                dragmode= "zoom",
+                legend=dict(
             ),
             xaxis=dict(
                 type= "date",
