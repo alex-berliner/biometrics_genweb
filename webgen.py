@@ -154,8 +154,8 @@ def create_running_average_headache_days(headache_function, htype):
 
     # replace average data with raw data for last 120 days
     raw_count = 120
-    # last_x = dayvals[-raw_count:]
-    # hen[-raw_count:] = last_x
+    last_x = dayvals[-raw_count:]
+    hen[-raw_count:] = last_x
     # splice back into events
     for i in range(len(hen)):
         headache_days[i].rate = hen[i]
